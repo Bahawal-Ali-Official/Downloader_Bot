@@ -131,6 +131,7 @@ async function processDownload(task) {
                     format: ytFormat,
                     noPlaylist: true,
                     output: outputTemplate,
+                    extractorArgs: 'youtube:player_client=android'
                 };
                 
                 if (hasCookies) {
