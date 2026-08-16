@@ -21,6 +21,7 @@ echo "[2/7] Cleaning old session data..."
 rm -rf auth_info_baileys
 rm -rf tmp
 rm -rf node_modules
+rm -f qr.png
 
 echo "[3/7] Installing system dependencies..."
 apt-get update -qq
