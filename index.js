@@ -205,32 +205,47 @@ async function startBot() {
                     const code = await sock.requestPairingCode(BOT_NUMBER);
                     console.log(`\n\n========================================`);
                     console.log(`YOUR PAIRING CODE IS: ${code}`);
-                    console.log(`========================================\n\n`);
+                    console.log(`========================================`);
+                    console.log(`Open WhatsApp > Linked Devices > Link with phone number instead`);
+                    console.log(`Enter the code above. You have about 60 seconds.\n`);
                 } catch (err) {
-                    isPairingRequested = false;
+                    console.error(`\n========================================`);
                     if (String(err).includes('428')) {
-                        console.error(`\n========================================`);
-                        console.error(`[ERROR 428] WHATSAPP RATE LIMIT TRIGGERED`);
-                        console.error(`You have requested too many codes too fast.`);
-                        console.error(`Please wait 5-10 minutes, then run the installer again.`);
+                        console.error(`RATE LIMITED BY WHATSAPP (Error 428)`);
+                        console.error(`Too many pairing attempts. Waiting 60 seconds...`);
                         console.error(`========================================\n`);
+                        setTimeout(() => process.exit(1), 60000);
                     } else {
-                        console.error(`Failed to get code: ${err?.message || err}`);
+                        console.error(`Pairing failed: ${err?.message || err}`);
+                        console.error(`Restarting in 10 seconds...`);
+                        console.error(`========================================\n`);
+                        setTimeout(() => process.exit(1), 10000);
                     }
+                    return;
                 }
-            }, 3000);
+            }, 5000);
         } else {
             console.error("BOT_NUMBER is not defined in .env. Cannot request pairing code.");
+            process.exit(1);
         }
     }
 
     sock.ev.on('creds.update', saveCreds);
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
-        
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            if (shouldReconnect) startBot();
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            if (statusCode === DisconnectReason.loggedOut) {
+                console.log('Bot was logged out. Clearing session and exiting...');
+                fs.rmSync('auth_info_baileys', { recursive: true, force: true });
+                process.exit(1);
+            }
+            if (statusCode === 428) {
+                console.log('Rate limited (428). Waiting 60 seconds before reconnecting...');
+                setTimeout(() => startBot(), 60000);
+                return;
+            }
+            setTimeout(() => startBot(), 5000);
         } else if (connection === 'open') {
             console.log('Bot is ready and connected!');
         }

@@ -3,34 +3,76 @@ set -e
 
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root using sudo."
-  exit
+  exit 1
 fi
 
-apt-get update
-apt-get install -y curl ffmpeg python3 python-is-python3
+echo ""
+echo "========================================="
+echo "  WhatsApp Downloader Bot - Installer"
+echo "========================================="
+echo ""
 
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs
+echo "[1/7] Stopping all existing bot processes..."
+pm2 kill 2>/dev/null || true
+rm -rf /root/.pm2 2>/dev/null || true
+rm -rf ~/.pm2 2>/dev/null || true
 
-if ! command -v pm2 > /dev/null; then
-  npm install -g pm2
+echo "[2/7] Cleaning old session data..."
+rm -rf auth_info_baileys
+rm -rf tmp
+rm -rf node_modules
+
+echo "[3/7] Installing system dependencies..."
+apt-get update -qq
+apt-get install -y -qq curl ffmpeg python3 > /dev/null 2>&1
+apt-get install -y -qq python-is-python3 > /dev/null 2>&1 || true
+
+NODE_VERSION=$(node -v 2>/dev/null | cut -d'.' -f1 | tr -d 'v')
+if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" -lt 20 ]; then
+  echo "[4/7] Installing Node.js 20..."
+  curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
+  apt-get install -y -qq nodejs > /dev/null 2>&1
+else
+  echo "[4/7] Node.js $NODE_VERSION already installed. Skipping."
 fi
+
+echo "[5/7] Pulling latest code from GitHub..."
+git reset --hard HEAD > /dev/null 2>&1 || true
+git pull > /dev/null 2>&1 || true
 
 if [ ! -f .env ]; then
-  read -p "Enter Admin WhatsApp Number (e.g. 923001234567): " admin_num
-  read -p "Enter Bot WhatsApp Number (e.g. 923001234567): " bot_num
+  echo ""
+  echo "========================================="
+  echo "  First time setup - enter your numbers"
+  echo "  Use country code without + sign"
+  echo "  Example: 923001234567"
+  echo "========================================="
+  echo ""
+  read -p "Enter Admin WhatsApp Number: " admin_num
+  read -p "Enter Bot WhatsApp Number (the number to link): " bot_num
   echo "ADMIN_NUMBER=$admin_num" > .env
   echo "BOT_NUMBER=$bot_num" >> .env
+  echo ""
 fi
 
+echo "[6/7] Installing node modules..."
 export YOUTUBE_DL_SKIP_PYTHON_CHECK=1
-npm install
+npm install --production > /dev/null 2>&1
+npm install -g pm2 > /dev/null 2>&1
 
-pm2 delete all || true
-rm -rf auth_info_baileys
-
-pm2 start index.js --name "whatsapp-bot"
+echo "[7/7] Starting bot..."
+echo ""
+pm2 start index.js --name "whatsapp-bot" --restart-delay=15000 --max-restarts=5
 pm2 save
-pm2 startup
+pm2 startup > /dev/null 2>&1 || true
 
-pm2 logs whatsapp-bot
+echo ""
+echo "========================================="
+echo "  Bot started! Showing logs below..."
+echo "  Wait for your PAIRING CODE to appear."
+echo "  Press Ctrl+C to exit logs (bot stays running)."
+echo "========================================="
+echo ""
+
+sleep 2
+pm2 logs whatsapp-bot --lines 50
