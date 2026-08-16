@@ -9,10 +9,8 @@ fi
 apt-get update
 apt-get install -y curl ffmpeg python3 python-is-python3
 
-if ! command -v node > /dev/null; then
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  apt-get install -y nodejs
-fi
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
 
 if ! command -v pm2 > /dev/null; then
   npm install -g pm2
