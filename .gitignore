@@ -1,0 +1,5 @@
+node_modules/
+tmp/
+auth_info_baileys/
+qr.png
+.env
