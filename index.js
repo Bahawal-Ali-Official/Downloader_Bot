@@ -90,6 +90,8 @@ async function processDownload(task) {
         else if (formatOption === 4) ytFormat = 'best[height<=480][ext=mp4]/best';
 
         const API_URL = process.env.API_URL;
+        const cookiesPath = path.join(__dirname, 'cookies.txt');
+        const hasCookies = fs.existsSync(cookiesPath);
         
         if (API_URL && isMediaLink) {
             try {
@@ -101,7 +103,7 @@ async function processDownload(task) {
             }
         }
 
-        if (!downloadSuccess && isYouTube && (formatOption === 1 || formatOption === 3 || formatOption === 4)) {
+        if (!downloadSuccess && !hasCookies && isYouTube && (formatOption === 1 || formatOption === 3 || formatOption === 4)) {
             const ytdlFile = path.join(tmpDir, `${id}.mp4`);
             const writer = fs.createWriteStream(ytdlFile);
             try {
@@ -123,13 +125,20 @@ async function processDownload(task) {
 
         if (!downloadSuccess) {
             try {
-                await youtubedl(url, {
+                const dlOptions = {
                     noWarnings: true,
                     maxFilesize: '1G',
                     format: ytFormat,
                     noPlaylist: true,
                     output: outputTemplate,
-                });
+                };
+                
+                if (hasCookies) {
+                    dlOptions.cookies = cookiesPath;
+                    console.log(`Using cookies.txt to bypass YouTube block...`);
+                }
+                
+                await youtubedl(url, dlOptions);
                 downloadSuccess = true;
             } catch (ytError) {
                 if (isMediaLink) {
