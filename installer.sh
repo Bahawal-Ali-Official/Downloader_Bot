@@ -65,6 +65,20 @@ if [ ! -f .env ]; then
   echo "BOT_NUMBER=$bot_num" >> .env
   echo "AUTH_METHOD=$auth_method" >> .env
   echo ""
+  
+  echo "========================================="
+  echo "  (Optional) External Download API URL"
+  echo "  If your VM is getting blocked by YouTube (HTTP 403),"
+  echo "  you can host the python API on Vercel/Render"
+  echo "  and paste its URL here to bypass the block."
+  echo "  Example: https://my-video-api.vercel.app"
+  echo "  Leave empty to download locally."
+  echo "========================================="
+  read -p "Enter API URL (or press Enter to skip): " api_url
+  if [ -n "$api_url" ]; then
+    echo "API_URL=$api_url" >> .env
+  fi
+  echo ""
 fi
 
 echo "[6/7] Installing node modules..."
