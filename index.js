@@ -189,14 +189,17 @@ let isPairingRequested = false;
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    const authMethod = (process.env.AUTH_METHOD || 'qr').toLowerCase();
+    const useQR = authMethod === 'qr';
+
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: false,
+        printQRInTerminal: useQR,
         logger: pino({ level: 'silent' }),
         browser: ['Downloader_Bot', 'Chrome', '1.0.0']
     });
 
-    if (!sock.authState.creds.registered && !isPairingRequested) {
+    if (!sock.authState.creds.registered && !isPairingRequested && !useQR) {
         const BOT_NUMBER = process.env.BOT_NUMBER ? process.env.BOT_NUMBER.replace(/[^0-9]/g, '') : '';
         if (BOT_NUMBER) {
             isPairingRequested = true;
@@ -231,8 +234,18 @@ async function startBot() {
     }
 
     sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
+        if (qr && useQR) {
+            try {
+                const QRCode = require('qrcode');
+                await QRCode.toFile('qr.png', qr, { width: 600, margin: 2 });
+                console.log(`\n========================================`);
+                console.log(`QR code saved as qr.png in the bot folder.`);
+                console.log(`Scan it from WhatsApp > Linked Devices > Link a Device`);
+                console.log(`========================================\n`);
+            } catch (e) {}
+        }
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             if (statusCode === DisconnectReason.loggedOut) {

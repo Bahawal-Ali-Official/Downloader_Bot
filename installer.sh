@@ -43,15 +43,27 @@ git pull > /dev/null 2>&1 || true
 if [ ! -f .env ]; then
   echo ""
   echo "========================================="
-  echo "  First time setup - enter your numbers"
+  echo "  First time setup"
   echo "  Use country code without + sign"
   echo "  Example: 923001234567"
   echo "========================================="
   echo ""
   read -p "Enter Admin WhatsApp Number: " admin_num
   read -p "Enter Bot WhatsApp Number (the number to link): " bot_num
+  echo ""
+  echo "Choose authentication method:"
+  echo "  1) QR Code (scan from phone camera)"
+  echo "  2) Pairing Code (type 8-digit code on phone)"
+  echo ""
+  read -p "Enter 1 or 2: " auth_choice
+  if [ "$auth_choice" = "2" ]; then
+    auth_method="code"
+  else
+    auth_method="qr"
+  fi
   echo "ADMIN_NUMBER=$admin_num" > .env
   echo "BOT_NUMBER=$bot_num" >> .env
+  echo "AUTH_METHOD=$auth_method" >> .env
   echo ""
 fi
 
@@ -69,7 +81,7 @@ pm2 startup > /dev/null 2>&1 || true
 echo ""
 echo "========================================="
 echo "  Bot started! Showing logs below..."
-echo "  Wait for your PAIRING CODE to appear."
+echo "  Wait for your QR or PAIRING CODE."
 echo "  Press Ctrl+C to exit logs (bot stays running)."
 echo "========================================="
 echo ""
