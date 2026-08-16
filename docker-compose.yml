@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  bot:
+    build: .
+    container_name: downloader_bot
+    restart: unless-stopped
+    volumes:
+      - ./auth_info_baileys:/app/auth_info_baileys
+      - ./tmp:/app/tmp
+      - ./.env:/app/.env

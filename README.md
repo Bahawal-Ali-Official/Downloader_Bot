@@ -9,9 +9,9 @@ A powerful WhatsApp bot capable of downloading media from various platforms (You
 - **Admin Controls:** Stop and start the bot globally via admin-only commands.
 - **Security:** Built-in URL validation and auto-cleanup of temporary/failed files.
 
-## Deployment on Oracle VM (Ubuntu/Linux)
+## Deployment with Docker (Single Command Setup)
 
-Follow these steps to deploy the bot on your Virtual Machine:
+The bot is fully containerized. You do not need to install Node.js, Python, or FFmpeg on your host machine. Everything runs securely inside the container.
 
 ### 1. Clone the Repository
 ```bash
@@ -20,45 +20,31 @@ cd Downloader_Bot
 ```
 
 ### 2. Setup Environment Variables
-Create a `.env` file from the example and set your Admin WhatsApp number.
+Create a `.env` file and set your Admin WhatsApp number. Do not use the '+' sign.
 ```bash
 cp .env.example .env
 nano .env 
-# Add your number like this: ADMIN_NUMBER=92300000000 (No '+' sign)
 ```
 
-### 3. Install Node Dependencies
+### 3. Deploy the Bot
+Start the bot using Docker Compose. This single command will build the image, install all requirements internally, and start the bot in the background.
 ```bash
-npm install
+docker-compose up -d --build
 ```
 
-### 4. Install FFmpeg (Important!)
-FFmpeg is required for the bot to properly merge high-quality video (1080p) and audio formats.
+### 4. Scan the QR Code
+To connect the bot to your WhatsApp, you need to scan the QR code. View the live container logs to see the QR code:
 ```bash
-sudo apt update
-sudo apt install ffmpeg -y
+docker-compose logs -f
 ```
+Scan the QR code using your phone (WhatsApp -> Linked Devices -> Link a Device). 
 
-### 5. Start and Connect the Bot
-Start the bot for the first time to generate the QR code:
-```bash
-npm start
-```
-A QR code will appear in the terminal. Open WhatsApp on your phone -> Linked Devices -> Link a Device, and scan the QR code. The session will be saved locally.
-
-### 6. Run in Background (24/7)
-To keep the bot running indefinitely even after you close your SSH terminal, install and use `pm2`:
-```bash
-sudo npm install -g pm2
-pm2 start index.js --name "whatsapp-bot"
-pm2 save
-pm2 startup
-```
+Press `Ctrl+C` to exit the logs. The bot will continue running in the background automatically 24/7.
 
 ## Available Commands
 - `/download <link>` - Send a supported link to download.
 - `/ytsearch <song/video name>` - Search YouTube and get top 5 results.
 - `/health` - Check bot server RAM, CPU status, and queue length.
 - `/help` - View the help message.
-- `/stop` - *(Admin only)* Stops accepting new requests.
-- `/start` - *(Admin only)* Resumes bot operations.
+- `/stop` - Admin only. Stops accepting new requests.
+- `/start` - Admin only. Resumes bot operations.
