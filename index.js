@@ -185,6 +185,8 @@ function promptFormatSelection(url, msg, sock, sender) {
     sock.sendMessage(msg.key.remoteJid, { text: formatText }, { quoted: msg });
 }
 
+let isPairingRequested = false;
+
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const sock = makeWASocket({
@@ -194,14 +196,28 @@ async function startBot() {
         browser: ['Downloader_Bot', 'Chrome', '1.0.0']
     });
 
-    if (!sock.authState.creds.registered) {
+    if (!sock.authState.creds.registered && !isPairingRequested) {
         const BOT_NUMBER = process.env.BOT_NUMBER ? process.env.BOT_NUMBER.replace(/[^0-9]/g, '') : '';
         if (BOT_NUMBER) {
+            isPairingRequested = true;
             setTimeout(async () => {
-                const code = await sock.requestPairingCode(BOT_NUMBER);
-                console.log(`\n\n========================================`);
-                console.log(`YOUR PAIRING CODE IS: ${code}`);
-                console.log(`========================================\n\n`);
+                try {
+                    const code = await sock.requestPairingCode(BOT_NUMBER);
+                    console.log(`\n\n========================================`);
+                    console.log(`YOUR PAIRING CODE IS: ${code}`);
+                    console.log(`========================================\n\n`);
+                } catch (err) {
+                    isPairingRequested = false;
+                    if (String(err).includes('428')) {
+                        console.error(`\n========================================`);
+                        console.error(`[ERROR 428] WHATSAPP RATE LIMIT TRIGGERED`);
+                        console.error(`You have requested too many codes too fast.`);
+                        console.error(`Please wait 5-10 minutes, then run the installer again.`);
+                        console.error(`========================================\n`);
+                    } else {
+                        console.error(`Failed to get code: ${err?.message || err}`);
+                    }
+                }
             }, 3000);
         } else {
             console.error("BOT_NUMBER is not defined in .env. Cannot request pairing code.");

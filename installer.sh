@@ -26,7 +26,9 @@ fi
 export YOUTUBE_DL_SKIP_PYTHON_CHECK=1
 npm install
 
-pm2 delete whatsapp-bot || true
+pm2 delete all || true
+rm -rf auth_info_baileys
+
 pm2 start index.js --name "whatsapp-bot"
 pm2 save
 pm2 startup
