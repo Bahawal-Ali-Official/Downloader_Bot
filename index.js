@@ -5,7 +5,6 @@ const {
     DisconnectReason
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
 const youtubedl = require('youtube-dl-exec');
@@ -190,19 +189,34 @@ async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
-        logger: pino({ level: 'silent' })
+        printQRInTerminal: false,
+        logger: pino({ level: 'silent' }),
+        browser: ['Downloader_Bot', 'Chrome', '1.0.0']
     });
+
+    if (!sock.authState.creds.registered) {
+        const BOT_NUMBER = process.env.BOT_NUMBER ? process.env.BOT_NUMBER.replace(/[^0-9]/g, '') : '';
+        if (BOT_NUMBER) {
+            setTimeout(async () => {
+                const code = await sock.requestPairingCode(BOT_NUMBER);
+                console.log(`\n\n========================================`);
+                console.log(`YOUR PAIRING CODE IS: ${code}`);
+                console.log(`========================================\n\n`);
+            }, 3000);
+        } else {
+            console.error("BOT_NUMBER is not defined in .env. Cannot request pairing code.");
+        }
+    }
+
     sock.ev.on('creds.update', saveCreds);
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        if (qr) {
-            const QRCode = require('qrcode');
-            QRCode.toFile('qr.png', qr, { width: 300 }, () => {});
-        }
+        const { connection, lastDisconnect } = update;
+        
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if (shouldReconnect) startBot();
+        } else if (connection === 'open') {
+            console.log('Bot is ready and connected!');
         }
     });
     sock.ev.on('messages.upsert', async (m) => {

@@ -9,9 +9,9 @@ A powerful WhatsApp bot capable of downloading media from various platforms (You
 - **Admin Controls:** Stop and start the bot globally via admin-only commands.
 - **Security:** Built-in URL validation and auto-cleanup of temporary/failed files.
 
-## Deployment with Docker (Single Command Setup)
+## Automated Deployment (Oracle VM / Ubuntu / Debian)
 
-The bot is fully containerized. You do not need to install Node.js, Python, or FFmpeg on your host machine. Everything runs securely inside the container.
+The bot comes with a smart auto-installer script that handles everything automatically. It will install all system dependencies (Node.js, Python, FFmpeg), configure your environment variables, bypass errors, and start the bot permanently in the background.
 
 ### 1. Clone the Repository
 ```bash
@@ -19,27 +19,20 @@ git clone <your-repo-link>
 cd Downloader_Bot
 ```
 
-### 2. Setup Environment Variables
-Create a `.env` file and set your Admin WhatsApp number. Do not use the '+' sign.
+### 2. Run the Auto-Installer
+Execute the script as the root user.
 ```bash
-cp .env.example .env
-nano .env 
+sudo bash installer.sh
 ```
 
-### 3. Deploy the Bot
-Start the bot using Docker Compose. This single command will build the image, install all requirements internally, and start the bot in the background.
-```bash
-docker-compose up -d --build
-```
+During the installation, the script will prompt you in the terminal to enter your Admin WhatsApp number and the Bot's WhatsApp number. Type them and press Enter.
 
-### 4. Scan the QR Code
-To connect the bot to your WhatsApp, you need to scan the QR code. View the live container logs to see the QR code:
-```bash
-docker-compose logs -f
-```
-Scan the QR code using your phone (WhatsApp -> Linked Devices -> Link a Device). 
+### 3. Connect the Bot
+Once the installer finishes, it will automatically open the logs. You will see an 8-character Pairing Code printed on the screen.
 
-Press `Ctrl+C` to exit the logs. The bot will continue running in the background automatically 24/7.
+Open WhatsApp on your phone -> Linked Devices -> Link a Device -> Tap "Link with phone number instead" -> Enter the 8-character code.
+
+Press `Ctrl+C` to exit the logs. The bot is managed by `pm2` and will run continuously 24/7, even if your VM reboots.
 
 ## Available Commands
 - `/download <link>` - Send a supported link to download.
